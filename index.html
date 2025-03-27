@@ -17,6 +17,125 @@
 </head>
 <body>
   <h1>데이터 분석가 훈련 웹사이트</h1>
-  ... 생략 (전체 코드는 위에서 이미 확인됨)
+  <label for="levelSelect">레벨 선택: </label>
+  <select id="levelSelect" onchange="changeLevel()">
+    <option value="basic">기초</option>
+    <option value="intermediate">중급</option>
+    <option value="advanced">고급</option>
+  </select>
+  <div class="description" id="description"></div>
+  <div class="question" id="question"></div>
+  <textarea id="codeInput" class="code-input" placeholder="여기에 코드를 입력하세요"></textarea>
+  <div>
+    <button onclick="checkCode()">제출</button>
+    <button onclick="nextQuestion()">다음 문제</button>
+    <button onclick="repeatQuestion()">다시 풀기</button>
+  </div>
+  <div class="result" id="result"></div>
+  <div class="section" id="explanation"></div>
+  <script>
+    let pyodide;
+    async function loadPyodideAndPackages() {
+      pyodide = await loadPyodide();
+      await pyodide.loadPackage(["numpy", "pandas"]);
+    }
+    loadPyodideAndPackages();
+    const allQuizData = {
+      basic: [
+        {
+          description: `📘 변수란?
+변수는 데이터를 저장하는 이름표입니다.
+예: x = 10 은 숫자 10을 변수 x에 저장한다는 뜻입니다.`,
+          question: `파이썬에서 변수 x에 숫자 10을 저장하려면 어떻게 해야 하나요?
+그리고 x를 출력해보세요.`,
+          answerCode: "x = 10
+print(x)",
+          explanation: `변수 x에 10을 저장한 뒤, print(x)로 출력합니다.`
+        },
+        {
+          description: `📘 리스트와 합계
+sum()은 리스트 내부 숫자의 합계를 구합니다.`,
+          question: `리스트 a = [1, 2, 3]의 합을 출력하는 코드를 작성하세요.`,
+          answerCode: "a = [1, 2, 3]
+print(sum(a))",
+          explanation: `sum() 함수를 사용하면 리스트 내부 숫자의 합을 구할 수 있습니다.`
+        },
+        {
+          description: `📘 평균 구하기
+Python의 len()과 sum()을 함께 사용하면 평균을 구할 수 있습니다.`,
+          question: `리스트 scores = [80, 90, 100]의 평균을 출력하는 코드를 작성하세요.`,
+          answerCode: "scores = [80, 90, 100]
+print(sum(scores)/len(scores))",
+          explanation: `sum(scores)/len(scores) 는 전체 합을 요소 수로 나눠 평균을 계산합니다.`
+        },
+        {
+          description: `📘 pandas의 DataFrame 만들기
+pd.DataFrame은 표 형태의 데이터를 만들 수 있습니다.`,
+          question: `pandas를 이용하여 다음 데이터를 DataFrame으로 만들고 출력하세요:
+이름: ['Kim', 'Lee'], 점수: [90, 85]`,
+          answerCode: "import pandas as pd
+data = {'이름': ['Kim', 'Lee'], '점수': [90, 85]}
+df = pd.DataFrame(data)
+print(df)",
+          explanation: `딕셔너리를 pd.DataFrame에 넣으면 표 형태로 출력됩니다.`
+        },
+        {
+          description: `📘 특정 열 선택하기
+DataFrame에서 특정 열만 선택하려면 df['컬럼명']을 사용합니다.`,
+          question: `df에서 '점수' 열만 선택하여 출력하는 코드를 작성하세요.`,
+          answerCode: "print(df['점수'])",
+          explanation: `df['컬럼명'] 형태로 특정 열만 선택해 출력할 수 있습니다.`
+        }
+      ]
+    };
+    let current = 0;
+    let currentLevel = 'basic';
+    let quizData = allQuizData[currentLevel];
+    function showQuestion() {
+      document.getElementById('result').textContent = "";
+      document.getElementById('explanation').textContent = "";
+      document.getElementById('question').textContent = quizData[current].question;
+      document.getElementById('description').textContent = quizData[current].description;
+      document.getElementById('codeInput').value = "";
+    }
+    async function checkCode() {
+      const userCode = document.getElementById('codeInput').value.trim();
+      const resultDiv = document.getElementById('result');
+      const explainDiv = document.getElementById('explanation');
+      resultDiv.style.color = "black";
+      resultDiv.textContent = "⏳ 실행 중...";
+      try {
+        const output = await pyodide.runPythonAsync(`import sys
+from io import StringIO
+output = StringIO()
+sys.stdout = output
+` + userCode + `
+sys.stdout = sys.__stdout__
+output.getvalue()`);
+        resultDiv.textContent = `✅ 실행 결과:
+${output}`;
+        resultDiv.style.color = "green";
+      } catch (err) {
+        resultDiv.textContent = `❌ 오류 발생:
+${err}`;
+        resultDiv.style.color = "red";
+      }
+      explainDiv.textContent = "📘 해설: " + quizData[current].explanation;
+    }
+    function nextQuestion() {
+      current = (current + 1) % quizData.length;
+      showQuestion();
+    }
+    function repeatQuestion() {
+      showQuestion();
+    }
+    function changeLevel() {
+      currentLevel = document.getElementById('levelSelect').value;
+      quizData = allQuizData[currentLevel];
+      current = 0;
+      showQuestion();
+    }
+    showQuestion();
+  </script>
 </body>
 </html>
