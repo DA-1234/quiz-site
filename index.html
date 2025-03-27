@@ -39,7 +39,6 @@
       pyodide = await loadPyodide();
       await pyodide.loadPackage(["numpy", "pandas"]);
     }
-    loadPyodideAndPackages();
     const allQuizData = {
       basic: [
         {
@@ -135,7 +134,9 @@ ${err}`;
       current = 0;
       showQuestion();
     }
-    showQuestion();
+    loadPyodideAndPackages().then(() => {
+      showQuestion();
+    });
   </script>
 </body>
 </html>
